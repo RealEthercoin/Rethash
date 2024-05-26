@@ -6,7 +6,7 @@ fn main() {
     // Build static library
     let dst = Config::new("../cpp").very_verbose(true).build();
     println!("cargo:rustc-link-search=native={}", dst.display());
-    println!("cargo:rustc-link-lib=static=FishHash");
+    println!("cargo:rustc-link-lib=static=RetHash");
     let target = std::env::var("TARGET").unwrap();
     if target.contains("apple") {
         println!("cargo:rustc-link-lib=dylib=c++");

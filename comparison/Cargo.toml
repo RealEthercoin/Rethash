@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fish_hash = { path = "../rust" }
+ret_hash = { path = "../rust" }
 
 [build-dependencies]
 cmake = "0.1.50"

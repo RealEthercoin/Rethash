@@ -131,14 +131,14 @@ pub struct Context {
 }
 
 impl Context {
-    /// Create a new cache context for the FishHash algorithm. Light cache is ~75MB and full
+    /// Create a new cache context for the RetHash algorithm. Light cache is ~75MB and full
     /// cache is ~4.6GB.
     ///
     /// # Arguments
     ///
     /// * `full` - whether to build the full dataset or just the light cache
     /// * `seed` - the seed to use for the light cache. If None, the default seed is used.
-    /// The FishHash specification is to always use the default seed but the option is
+    /// The RetHash specification is to always use the default seed but the option is
     /// still provided for potential future use cases like rotating the cache.
     pub fn new(full: bool, seed: Option<[u8; 32]>) -> Self {
         // Vec into boxed sliced, because you can't allocate an array directly on
@@ -252,7 +252,7 @@ pub fn hash(output: &mut [u8], context: &mut Context, header: &[u8]) {
     let mut output_reader = hasher.finalize_xof();
     output_reader.fill(&mut seed.0);
 
-    let mix_hash = fishhash_kernel(context, &seed);
+    let mix_hash = rethash_kernel(context, &seed);
 
     let mut final_data: [u8; 96] = [0; 96];
     final_data[0..64].copy_from_slice(&seed.0);
@@ -262,7 +262,7 @@ pub fn hash(output: &mut [u8], context: &mut Context, header: &[u8]) {
     output.copy_from_slice(hash.as_bytes());
 }
 
-fn fishhash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
+fn rethash_kernel(context: &mut Context, seed: &Hash512) -> Hash256 {
     let mut mix = Hash1024::from_512s(seed, seed);
 
     for _ in 0..NUM_DATASET_ACCESSES as usize {

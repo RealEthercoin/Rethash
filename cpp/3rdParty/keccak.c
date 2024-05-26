@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 /*
-	FishHash requires keccak for computing the data set items
+	RetHash requires keccak for computing the data set items
 */
 
 #if _MSC_VER

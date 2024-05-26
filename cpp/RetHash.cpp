@@ -1,4 +1,4 @@
-#include "FishHash.h"
+#include "RetHash.h"
 #include "3rdParty/keccak.h"
 #include "3rdParty/blake3.h"
 
@@ -12,7 +12,7 @@
 #include <thread>
 #include <vector>
 
-namespace FishHash {
+namespace RetHash {
 
 	/*****************************
 	
@@ -32,7 +32,7 @@ namespace FishHash {
 				0x55,0xa9,0xb3,0x9b,0x0e,0xdf,0x26,0x53,
 				0x98,0x44,0xf1,0x17,0xad,0x67,0x21,0x19}};
 				
-	std::shared_ptr<fishhash_context> shared_context;
+	std::shared_ptr<rethash_context> shared_context;
 	std::mutex shared_context_mutex;
 	
 	/*****************************
@@ -72,7 +72,7 @@ namespace FishHash {
 
 	    hash512 mix;
 
-	    inline item_state(const fishhash_context& ctx, int64_t index) noexcept
+	    inline item_state(const rethash_context& ctx, int64_t index) noexcept
 	      : cache{ctx.light_cache},
 		num_cache_items{ctx.light_cache_num_items},
 		seed{static_cast<uint32_t>(index)}
@@ -99,7 +99,7 @@ namespace FishHash {
 	};
 
 
-	hash1024 calculate_dataset_item_1024(const fishhash_context& ctx, uint32_t index) noexcept
+	hash1024 calculate_dataset_item_1024(const rethash_context& ctx, uint32_t index) noexcept
 	{
 	    item_state item0{ctx, int64_t(index) * 2};
 	    item_state item1{ctx, int64_t(index) * 2 + 1};
@@ -120,7 +120,7 @@ namespace FishHash {
 		
 	******************************/
 	
-	inline hash1024 lookup(const fishhash_context& ctx, uint32_t index) {
+	inline hash1024 lookup(const rethash_context& ctx, uint32_t index) {
 		if (ctx.full_dataset != NULL) {
 			hash1024 * item = &ctx.full_dataset[index];
 			
@@ -135,7 +135,7 @@ namespace FishHash {
 		}
 	}
 
-	inline hash256 fishhash_kernel( const fishhash_context& ctx, const hash512& seed) noexcept {
+	inline hash256 rethash_kernel( const rethash_context& ctx, const hash512& seed) noexcept {
 		const uint32_t index_limit = static_cast<uint32_t>(ctx.full_dataset_num_items);
 		const uint32_t seed_init = seed.word32s[0];
 	    
@@ -176,7 +176,7 @@ namespace FishHash {
 		return mix_hash;
 	}
 
-	void hash(uint8_t * output, const fishhash_context * ctx, const uint8_t * header, uint64_t header_size) noexcept {
+	void hash(uint8_t * output, const rethash_context * ctx, const uint8_t * header, uint64_t header_size) noexcept {
 		hash512 seed; 
 	   
 		blake3_hasher hasher;
@@ -184,7 +184,7 @@ namespace FishHash {
 		blake3_hasher_update(&hasher, header, header_size);
 		blake3_hasher_finalize(&hasher, seed.bytes, 64);
 				
-		const hash256 mix_hash = fishhash_kernel(*ctx, seed);
+		const hash256 mix_hash = rethash_kernel(*ctx, seed);
 	    
 		uint8_t final_data[sizeof(seed) + sizeof(mix_hash)];
 		std::memcpy(&final_data[0], seed.bytes, sizeof(seed));
@@ -236,7 +236,7 @@ namespace FishHash {
 		}
 	}
 	
-	void build_dataset_segment(fishhash_context * ctx, uint32_t start, uint32_t end) {
+	void build_dataset_segment(rethash_context * ctx, uint32_t start, uint32_t end) {
 		for (uint32_t i=start; i<end; ++i) {
 			ctx -> full_dataset[i] = calculate_dataset_item_1024(*ctx, i);
 		}
@@ -248,7 +248,7 @@ namespace FishHash {
 		
 	******************************/
 		
-	fishhash_context* get_context(bool full) noexcept {
+	rethash_context* get_context(bool full) noexcept {
 		std::lock_guard<std::mutex> lock{shared_context_mutex};
 	
 		if (shared_context) {
@@ -272,7 +272,7 @@ namespace FishHash {
 		
 		hash1024* full_dataset = full ? reinterpret_cast<hash1024*>(alloc_data + context_alloc_size + light_cache_size): nullptr;
 				
-		shared_context.reset( new (alloc_data) fishhash_context{
+		shared_context.reset( new (alloc_data) rethash_context{
      			light_cache_num_items,
 			light_cache,
        			full_dataset_num_items,
@@ -282,7 +282,7 @@ namespace FishHash {
 			
 	}
 		
-	void prebuild_dataset(fishhash_context * ctx, uint32_t numThreads) noexcept {
+	void prebuild_dataset(rethash_context * ctx, uint32_t numThreads) noexcept {
 		// If the context is not initialized as full context, return to avoid segmentation faults
 		if (ctx->full_dataset == NULL) return;
 	
